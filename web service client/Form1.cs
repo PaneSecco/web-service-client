@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,16 +9,21 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Policy;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json;
+using RestSharp;
+
 
 namespace web_service_client
 {
     public partial class Form1 : Form
     {
+        private readonly HttpClient httpClient = new HttpClient();
         private List<Label> labels = new List<Label>();
         private List<TextBox> textBoxes = new List<TextBox>();
         string baseURL = "http://localhost/Lezione/";
@@ -233,38 +239,39 @@ namespace web_service_client
             }
         }
 
-        private async void SendPostRequest(string jsonData)
+        private async Task SendPostRequest(string jsonData)
         {
             MessageBox.Show(jsonData);
 
             string apiUrl = baseURL;
 
-            // Costruisci il JSON da inviare
-            string jsonBody = jsonData;
-
-            // Crea un oggetto HttpClient
-            using (HttpClient client = new HttpClient())
+            using (var content = new StringContent(jsonData, Encoding.UTF8, "application/json"))
             {
-                // Converti il JSON in un oggetto StringContent per includerlo nel corpo della richiesta
-                StringContent content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+                // Aggiungi l'header Content-Type
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
-                // Invia la richiesta POST all'API
-                HttpResponseMessage response = await client.PostAsync(apiUrl, content);
-
-                // Gestisci la risposta
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    MessageBox.Show("Richiesta POST inviata con successo.");
-                    MessageBox.Show(response.Content.ReadAsStringAsync().ToString());
+                    var response = await httpClient.PostAsync(baseURL, content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        MessageBox.Show("Richiesta POST completata con successo.");
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Errore durante la richiesta POST. Codice: {response.StatusCode}");
+                    }
                 }
-                else
+                catch (HttpRequestException ex)
                 {
-                    MessageBox.Show($"Errore durante l'invio della richiesta: {response.StatusCode}");
+                    MessageBox.Show($"Errore durante la richiesta HTTP: {ex.Message}");
                 }
             }
+
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private async void button2_Click(object sender, EventArgs e)
         {
             // versione precedente
             // Creazione di un oggetto anonimo per memorizzare i valori delle label e delle textbox
@@ -284,7 +291,7 @@ namespace web_service_client
             textBox1.Text= json;
 
             // Invio del JSON in una richiesta HTTP POST
-            SendPostRequest(json);
+            await SendPostRequest(json);
         }
 
         private void button3_Click(object sender, EventArgs e)
