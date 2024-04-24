@@ -271,7 +271,86 @@ namespace web_service_client
 
         }
 
+        private async Task SendPutRequest(string jsonData)
+        {
+            string apiUrl = baseURL;
+
+            using (var content = new StringContent(jsonData, Encoding.UTF8, "application/json"))
+            {
+                // Aggiungi l'header Content-Type
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+                try
+                {
+                    var response = await httpClient.PutAsync(apiUrl, content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        MessageBox.Show("Richiesta PUT completata con successo.");
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Errore durante la richiesta PUT. Codice: {response.StatusCode}");
+                    }
+                }
+                catch (HttpRequestException ex)
+                {
+                    MessageBox.Show($"Errore durante la richiesta HTTP: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task SendDeleteRequestWithBody(string jsonData)
+        {
+            string apiUrl = baseURL;
+
+            using (HttpClient client = new HttpClient())
+            {
+                // Creazione del contenuto della richiesta con il JSON
+                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                // Creazione della richiesta HTTP con metodo DELETE
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, apiUrl);
+                request.Content = content;
+
+                // Invio della richiesta DELETE
+                HttpResponseMessage response = await client.SendAsync(request);
+
+                // Gestione della risposta
+                if (response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show("Richiesta DELETE completata con successo.");
+                }
+                else
+                {
+                    MessageBox.Show($"Errore durante la richiesta DELETE: {response.StatusCode}");
+                }
+            }
+        }
+
+
         private async void button2_Click(object sender, EventArgs e)
+        {
+            var data = new Dictionary<string, string>();
+
+            // Aggiungi il campo "nome_tabella" con il valore selezionato dalla combobox1
+            data["nome_tabella"] = comboBox1.SelectedItem.ToString();
+
+            for (int i = 0; i < labels.Count; i++)
+            {
+                data[labels[i].Text] = textBoxes[i].Text;
+            }
+
+            // Serializzazione dell'oggetto in formato JSON
+            string json = JsonConvert.SerializeObject(data);
+
+            textBox1.Text = json;
+
+            // Invio del JSON in una richiesta HTTP POST
+            await SendPutRequest(json);
+        }
+
+        private async void button3_Click(object sender, EventArgs e)
         {
             // versione precedente
             // Creazione di un oggetto anonimo per memorizzare i valori delle label e delle textbox
@@ -288,20 +367,31 @@ namespace web_service_client
             // Serializzazione dell'oggetto in formato JSON
             string json = JsonConvert.SerializeObject(data);
 
-            textBox1.Text= json;
+            textBox1.Text = json;
 
             // Invio del JSON in una richiesta HTTP POST
             await SendPostRequest(json);
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private async void button4_Click(object sender, EventArgs e)
         {
-            
-        }
+            var data = new Dictionary<string, string>();
 
-        private void button4_Click(object sender, EventArgs e)
-        {
+            // Aggiungi il campo "nome_tabella" con il valore selezionato dalla combobox1
+            data["nome_tabella"] = comboBox1.SelectedItem.ToString();
 
+            for (int i = 0; i < labels.Count; i++)
+            {
+                data[labels[i].Text] = textBoxes[i].Text;
+            }
+
+            // Serializzazione dell'oggetto in formato JSON
+            string json = JsonConvert.SerializeObject(data);
+
+            textBox1.Text = json;
+
+            // Invio del JSON in una richiesta HTTP POST
+            await SendDeleteRequestWithBody(json);
         }
     }
 }
